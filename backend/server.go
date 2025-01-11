@@ -43,7 +43,18 @@ func (s *Server) readMessages(ws *websocket.Conn) {
 		}
 		message := buffer[:numBytes]
 		fmt.Println("Message from Client:", string(message))
-		ws.Write([]byte("thank you for the message"))
+		s.broadcastMessage(message)
+	}
+}
+
+func (s *Server) broadcastMessage(msg []byte) {
+	for socket := range s.conns {
+		go func(socket *websocket.Conn) {
+			if _, err := socket.Write(msg); err != nil {
+				fmt.Println("Write error:", err)
+				s.removeConnection(socket)
+			}
+		}(socket)
 	}
 }
 
